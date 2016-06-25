@@ -36,10 +36,10 @@
 - 创建<code> Podfile </code>文件
 >* 在工程根目录创建名为<code> Podfile </code>的空文件
 >* 编辑文件，并输入形如下面的内容
-`
+<pre>
 platform :ios, '9.0'
 pod 'AFNetworking', '~> 3.1.0'
-`
+</pre>
 
 - 载入类库
 >* 建立podspec索引 <code>pod setup</code>
@@ -47,10 +47,10 @@ pod 'AFNetworking', '~> 3.1.0'
 >* 更新升级 <code>pod update</code>
 
 如果在pod install、或者pod update时，不想升级specs库，可以增加忽略参数
-`
+<pre>
 pod install --no-repo-update
 pod update --no-repo-update
-`
+</pre>
 
 ### 完成API接口调用
 - GET请求
