@@ -111,6 +111,34 @@ NSString *host = @"http://domain/";
     [self callActionSheetFunc];
 }
 
+- (IBAction)clickTestDownload:(id)sender {
+    //请求的URL地址
+    NSURL *url = [NSURL URLWithString:[host stringByAppendingString:@"apk/application.apk"]];
+    
+    //创建请求对象
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    
+    //下载任务
+    NSURLSessionDownloadTask *task = [self.manager downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
+        //下载进度
+        NSLog(@"下载进度：%lld％", downloadProgress.completedUnitCount * 100 / downloadProgress.totalUnitCount);
+    } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {
+        //下载地址
+        NSLog(@"默认下载地址:%@",targetPath);
+        
+        //设置下载路径，通过沙盒获取缓存地址，最后返回NSURL对象
+        NSString *filePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES)lastObject];
+        return [NSURL URLWithString:filePath];
+    } completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+        //下载完成调用的方法
+        NSLog(@"下载完成:%@--%@",response,filePath);
+    }];
+    
+    //开始启动任务
+    [task resume];
+}
+
+
 
 - (void)doTestUpload:(NSData*)imageData {
     self.labelMessage.text = @"开始上传";
@@ -148,8 +176,6 @@ NSString *host = @"http://domain/";
                   
               }];
 }
-
-
 
 /**
  @ 调用ActionSheet
@@ -214,14 +240,6 @@ NSString *host = @"http://domain/";
     
     [self doTestUpload:imageData];
 }
-
-
-
-
-
-
-
-
 
 
 // unicode解码

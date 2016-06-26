@@ -2,7 +2,7 @@
 一个使用iOS开发的API调用
 
 ## 说明
-> 该案例包含了HTTP的GET、POST及文件上传demo
+> 该案例包含了HTTP的GET、POST及文件上传&下载demo
 
 ### 安装环境
 
@@ -53,11 +53,35 @@ pod update --no-repo-update
 </pre>
 
 ### 完成API接口调用
-- GET请求
+
+- 准备AFHTTPSessionManager
+
 <pre>
-AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+- (AFHTTPSessionManager *) manager {
+    if (self._manager == nil) {
+        self._manager = [AFHTTPSessionManager manager];
+        // 超时时间
+        self._manager.requestSerializer.timeoutInterval = 20 * 1000;
+    
+        // 声明上传参数的数据格式
+        self._manager.requestSerializer = [AFHTTPRequestSerializer serializer];
+    
+        // 声明获取到的数据格式
+        // JSON -> AFJSONResponseSerializer
+        self._manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+        self._manager.responseSerializer.acceptableContentTypes=[NSSet setWithObjects:@"application/json", @"text/json", @"text/javascript", @"text/plain", @"text/html", nil];
+    }
+    
+    return self._manager;
+}
+</pre>
+
+- GET请求
+
+<pre>
 NSMutableDictionary *params = @{@"key1":@"value1",@"key2":@"value2"};
-[manager GET:@"请求的url" parameters: params progress:nil success:^(NSURLSessionDataTask *task, id responseObject) {
+
+[self.manager GET:@"请求的url" parameters: params progress:nil success:^(NSURLSessionDataTask *task, id responseObject) {
         NSLog(@"成功");
 } failure:^(NSURLSessionDataTask *task, NSError *error) {
         NSLog(@"失败");        
@@ -65,10 +89,11 @@ NSMutableDictionary *params = @{@"key1":@"value1",@"key2":@"value2"};
 </pre>
 
 - POST请求
+
 <pre>
-AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
 NSMutableDictionary *params = @{@"key1":@"value1",@"key2":@"value2"};
-[manager POST:@"请求的url" parameters: params progress:nil success:^(NSURLSessionDataTask *task, id responseObject) {
+
+[self.manager POST:@"请求的url" parameters: params progress:nil success:^(NSURLSessionDataTask *task, id responseObject) {
         NSLog(@"成功");
 } failure:^(NSURLSessionDataTask *task, NSError *error) {
         NSLog(@"失败");        
@@ -76,23 +101,60 @@ NSMutableDictionary *params = @{@"key1":@"value1",@"key2":@"value2"};
 </pre>
 
 - 文件上传
+
 <pre>
-AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
 NSMutableDictionary *params = @{@"key1":@"value1",@"key2":@"value2"};
-[manager POST:@"请求的url" parameters: params constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+
+[self.manager POST:@"请求的url" parameters: params constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
         //上传文件
         UIImage *iamge = [UIImage imageNamed:@"文件名.png"];
         NSData *data = UIImagePNGRepresentation(iamge);
         //设置参数
         [formData appendPartWithFileData:data name:@"file" fileName:@"文件名.png" mimeType:@"image/png"];
+
 } progress:^(NSProgress * _Nonnull uploadProgress) {
         //更新上传进度
         long long totalCount = (long long)uploadProgress.totalUnitCount;
         long long curentCount = (long long)uploadProgress.completedUnitCount;
         NSLog(@"%lld", curentCount*100/totalCount);
+
 } success:^(NSURLSessionDataTask *task, id responseObject) {
         NSLog(@"成功");
+
 } failure:^(NSURLSessionDataTask *task, NSError *error) {
         NSLog(@"失败");        
+
 }];
+</pre>
+
+- 文件下载
+
+<pre>
+//请求的URL地址
+NSURL *url = [NSURL URLWithString:[host stringByAppendingString:@"apk/application.apk"]];
+
+//创建请求对象
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+
+//下载任务
+NSURLSessionDownloadTask *task = [self.manager downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
+        //下载进度
+        NSLog(@"下载进度：%lld％", downloadProgress.completedUnitCount * 100 / downloadProgress.totalUnitCount);
+
+} destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {
+        //下载地址
+        NSLog(@"默认下载地址:%@",targetPath);
+
+        //设置下载路径，通过沙盒获取缓存地址，最后返回NSURL对象
+        NSString *filePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES)lastObject];
+        return [NSURL URLWithString:filePath];
+
+} completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+        //下载完成调用的方法
+        NSLog(@"下载完成:%@--%@",response,filePath);
+
+}];
+
+//开始启动任务
+[task resume];
 </pre>
